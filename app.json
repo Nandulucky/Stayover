@@ -1,0 +1,11 @@
+{
+  "name": "stayover",
+  "slug": "stayover",
+  "expo": {
+    "name": "stayover",
+    "slug": "stayover",
+    "displayName": "stayover",
+    "sdkVersion": "28",
+    "privacy": "public"
+  }
+}

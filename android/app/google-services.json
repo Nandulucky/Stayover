@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "708470507521",
+    "firebase_url": "https://stayover-1552545192202.firebaseio.com",
+    "project_id": "stayover-1552545192202",
+    "storage_bucket": "stayover-1552545192202.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:708470507521:android:7bba0e4864096150",
+        "android_client_info": {
+          "package_name": "com.stayover"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "708470507521-mqbi3sfnqrs8r6t7js939njktpr9rlpf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBc-n7BmYeTVj5CJE-s4GB0qPfDWMRG3rI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "708470507521-mqbi3sfnqrs8r6t7js939njktpr9rlpf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
