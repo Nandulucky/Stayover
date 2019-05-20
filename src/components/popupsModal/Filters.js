@@ -150,6 +150,7 @@ export default class Filters extends Component {
             this.setModalVisible(!this.state.modalVisible);
           }}
         >
+          <View style={{ height: "5.35%", backgroundColor: "white" }} />
           <View style={container}>
             <View style={styles.topbar}>
               <TouchableOpacity

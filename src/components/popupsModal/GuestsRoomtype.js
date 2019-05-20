@@ -45,6 +45,8 @@ export default class GuestsRoomtype extends Component {
             this.setModalVisible(!this.state.modalVisible);
           }}
         >
+          <View style={{ height: "5.35%", backgroundColor: "white" }} />
+
           <View style={container}>
             <View style={{ flexDirection: "row" }}>
               <TouchableOpacity
@@ -569,26 +571,51 @@ export default class GuestsRoomtype extends Component {
         <TouchableOpacity onPress={() => this.setModalVisible(true)}>
           <View
             style={{
-              flex: 1,
               flexDirection: "row",
               justifyContent: "space-between",
-              marginBottom: 5
+              borderWidth: 1,
+              height: 37,
+              borderRadius: 19,
+              backgroundColor: "white",
+              marginHorizontal: 8,
+              marginBottom: 8,
+              borderColor: "#DFDFDF"
             }}
           >
-            <View style={{ flex: 1, paddingLeft: 10, paddingRight: 5 }}>
+            <View
+              style={{
+                flex: 1,
+                paddingLeft: 10,
+                height: 37,
+
+                paddingRight: 5,
+                justifyContent: "center",
+                backgroundColor: "transparent"
+              }}
+            >
               <TextInput
                 style={styles.gestinputstyle}
                 editable={false}
                 placeholder="Guests"
+                pointerEvents="none"
                 placeholderTextColor="#808080"
                 value={this.state.totalGuestCount + " Guests"}
               />
             </View>
-            <View style={{ flex: 1, paddingRight: 10, paddingLeft: 5 }}>
+            <View
+              style={{
+                flex: 1,
+                paddingLeft: 10,
+                paddingRight: 5,
+                justifyContent: "center",
+                backgroundColor: "transparent"
+              }}
+            >
               <TextInput
                 style={styles.gestinputstyle}
                 editable={false}
                 placeholder="Room types"
+                pointerEvents="none"
                 placeholderTextColor="#808080"
                 value={this.state.roomTypeSelected}
               />
@@ -645,7 +672,6 @@ const styles = StyleSheet.create({
   gestinputstyle: {
     fontSize: 14,
     textAlign: "justify",
-    borderWidth: 1,
     borderRadius: 19,
     paddingLeft: 18,
     borderColor: "#DFDFDF",

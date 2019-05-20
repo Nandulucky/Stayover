@@ -181,10 +181,9 @@ export default class DatePickerModal extends Component {
             this.setModalVisible(!this.state.modalVisible);
           }}
         >
-                  <View style={{height:"5.35%",backgroundColor: "white" }}  />
+          <View style={{ height: "5.35%", backgroundColor: "white" }} />
 
           <View style={{ flexDirection: "row" }}>
-
             <TouchableOpacity
               onPress={() => {
                 this.setModalVisible(!this.state.modalVisible);
@@ -289,10 +288,10 @@ export default class DatePickerModal extends Component {
         <TouchableOpacity onPress={() => this.setModalVisible(true)}>
           <View
             style={{
-              flex: 1,
               flexDirection: "row",
               justifyContent: "space-between",
               borderWidth: 1,
+              height: 37,
               borderRadius: 19,
               backgroundColor: "white",
               marginHorizontal: 8,
@@ -305,6 +304,7 @@ export default class DatePickerModal extends Component {
                 flex: 1,
                 paddingLeft: 10,
                 paddingRight: 5,
+                justifyContent: "center",
                 backgroundColor: "transparent"
               }}
             >
@@ -317,14 +317,16 @@ export default class DatePickerModal extends Component {
                 }}
                 editable={false}
                 placeholder="Check-in"
+                pointerEvents="none"
                 placeholderTextColor="#808080"
                 value={this.formatDate(this.state.selectedStartDate)}
               />
             </View>
             <View
               style={{
-                flex: 1,
                 paddingRight: 10,
+                justifyContent: "center",
+                height: 37,
                 paddingLeft: 5,
                 backgroundColor: "transparent"
               }}
@@ -336,6 +338,7 @@ export default class DatePickerModal extends Component {
                   textTransform: "capitalize"
                 }}
                 editable={false}
+                pointerEvents="none"
                 placeholder="Check-out"
                 placeholderTextColor="#808080"
                 value={this.formatDate(this.state.selectedEndDate)}

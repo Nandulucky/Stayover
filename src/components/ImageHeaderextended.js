@@ -155,9 +155,9 @@ class ImageHeaderextended extends Component {
     return (
       <View
         style={{
-          backgroundColor: "transparent",
           flex: 0.24,
-          position: "absolute"
+          position: "absolute",
+          top: "5.35%"
         }}
       >
         <Image source={require("../assets/bg.png")} style={imageHead} />

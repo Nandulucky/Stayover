@@ -290,7 +290,7 @@ class Explore extends React.Component {
     } = styles;
     return (
       <ScrollView style={container} keyboardShouldPersistTaps="always">
-      <View style={{height:"5.35%",backgroundColor: "#f9f9f9" }}  />
+        <View style={{ height: "5.35%", backgroundColor: "#f9f9f9" }} />
         <NavigationEvents
           onWillFocus={payload => {
             console.log(this.props.navigation);
@@ -412,7 +412,7 @@ class Explore extends React.Component {
                 }}
                 style={{ backgroundColor: "white", marginHorizontal: 5 }}
               >
-                <View style={{ ...card, width: 200 }}>
+                <View style={{ ...card, width: winWidth / 2.2 }}>
                   <Image
                     source={{ uri: items.Apartment_Image }}
                     style={subcardImage}
@@ -540,7 +540,7 @@ class Explore extends React.Component {
                 <View
                   style={{
                     ...card,
-                    width: 190,
+                    width: winWidth / 2.2,
                     heigth: 200
                   }}
                 >
@@ -652,7 +652,7 @@ class Explore extends React.Component {
                 <View
                   style={{
                     ...card,
-                    width: 190,
+                    width: winWidth / 2.2,
                     heigth: 200
                   }}
                 >

@@ -215,6 +215,7 @@ class SearchResult extends React.Component {
             </TouchableOpacity>
           ))}
         </ScrollView>
+
         <ImageHeaderextended
           title={City}
           navig={this.props.navigation}
@@ -237,10 +238,11 @@ export default connect(
 )(SearchResult);
 
 const styles = StyleSheet.create({
-  container: { flex: 1, marginTop: "29%", backgroundColor: "transparent" },
+  container: { flex: 1, marginTop: "29%", backgroundColor: "white" },
   maincontainer: {
     flex: 1,
-    position: "relative"
+    position: "relative",
+    backgroundColor: "#541faa"
   },
   card: {
     flex: 1,

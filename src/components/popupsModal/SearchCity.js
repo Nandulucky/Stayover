@@ -82,6 +82,7 @@ export default class SearchCity extends Component {
             this.setModalVisible(!this.state.modalVisible);
           }}
         >
+          <View style={{ height: "5.35%", backgroundColor: "#432355" }} />
           <ScrollView style={container} keyboardShouldPersistTaps="always">
             <View
               style={{
@@ -109,7 +110,7 @@ export default class SearchCity extends Component {
                     color="#fff"
                     style={{
                       fontSize: 20,
-                      paddingTop: 15,
+                      padding: "1.5%",
                       fontFamily: "OpenSans-Regular"
                     }}
                   />
@@ -145,8 +146,8 @@ export default class SearchCity extends Component {
                   onPress={this.handleClear}
                   style={{
                     position: "absolute",
-                    margin: "1%",
-                    marginLeft: "85%"
+                    top: "5%",
+                    marginLeft: "87plan%"
                   }}
                 >
                   <Icon
@@ -196,6 +197,7 @@ export default class SearchCity extends Component {
             containerStyle={styles.searchcontainer}
             inputContainerStyle={styles.searchinputstyle}
             inputStyle={styles.inputstyless}
+            pointerEvents="none"
             placeholder="Where are you traveling?"
             placeholderTextColor="#808080"
             searchIcon={{ position: "absolute", margin: 10, marginLeft: 3 }}
