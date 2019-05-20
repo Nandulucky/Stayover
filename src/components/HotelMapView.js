@@ -317,6 +317,7 @@ class HotelMapView extends Component {
 
     return (
       <View style={styles.container}>
+        <View style={{ height: "5.35%", backgroundColor: "#541faa" }} />
         <MapView
           ref={map => (this.map = map)}
           initialRegion={this.state.region}
