@@ -13,12 +13,13 @@ import ProductStyles from "./ProductStyle";
 import { Rating } from "react-native-elements";
 import { connect } from "react-redux";
 import * as actions from "../../actions";
+import axios from "axios";
 import CommonDatePickerModal from "../popupsModal/commonModals/CommonDatePickerModal";
 import CommonGuest from "../popupsModal/commonModals/CommonGuest";
 import ManageBookingPopup from "../popupsModal/ManageBookingPopup";
 import CancellationPopup from "../popupsModal/CancellationPopup";
-import Homeinfo from "../popupsModal/Homeinfo";
-
+import CancellSuccess from "../popupsModal/CancellSuccess";
+import { Spinner } from "../common";
 import { Button } from "react-native-paper";
 
 const styles = StyleSheet.create({ ...ProductStyles });
@@ -55,6 +56,8 @@ let Total;
 let days;
 let userdetails = null;
 let modifyBooking = false;
+let bookingData = null;
+
 class PreviewBookingDetails extends Component {
   static defaultProps = {
     containerStyle: {}
@@ -64,7 +67,13 @@ class PreviewBookingDetails extends Component {
     modalGuestStart: false,
     modalmanagebooking: false,
     modalcancelbooking: false,
-    bookingmodifysave: false
+    bookingmodifysave: false,
+    isLoading: false,
+    modalCancellSuccess: false
+  };
+
+  SpinnerStart = value => {
+    this.setState({ isLoading: value });
   };
   constructor(props) {
     super(props);
@@ -72,9 +81,17 @@ class PreviewBookingDetails extends Component {
     checkin = this.props.AllData.CheckIn;
     checkout = this.props.AllData.CheckOut;
     userdetails = this.props.AllData.UserData;
+    this.resetPage = this.resetPage.bind(this);
+    this.modifyConfirmDate = this.modifyConfirmDate.bind(this);
+    this.modifyDate = this.modifyDate.bind(this);
     guest = this.props.AllData.GuestCount;
     modifyBooking = this.props.navigation.getParam("modifyBooking", false);
+    bookingData = this.props.navigation.getParam("bookingData", false);
   }
+
+  setSuccesscancelModalVisible = visible => {
+    this.setState({ modalCancellSuccess: visible });
+  };
   setmanagebookModalVisible = visible => {
     this.setState({ modalmanagebooking: visible });
   };
@@ -91,6 +108,88 @@ class PreviewBookingDetails extends Component {
   setGuestModalVisible = visible => {
     this.setState({ modalGuestStart: visible });
   };
+
+  async modifyDate() {
+    const response = await axios
+      .post(
+        "https://vp3zckv2r8.execute-api.us-east-1.amazonaws.com/latest/booking/modify",
+        {
+          prevBookingInfo: bookingData,
+          newCheckInDate: this.props.AllData.CheckIn,
+          newCheckOutDate: this.props.AllData.CheckOut,
+          guests: this.props.AllData.GuestCount,
+
+          userDetails: {
+            userId: userdetails.userID,
+            userName: userdetails.name,
+            userEmail: userdetails.email,
+            userContact: userdetails.phone_number
+          }
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + userdetails.idtoken,
+            Token: userdetails.accessToken
+          } //refreshToken, idtoken,accessToken
+        }
+      )
+      .then(response => {
+        // handle success
+
+        console.log(response);
+
+        this.SpinnerStart(false);
+      })
+      .catch(error => {
+        console.log(error.response);
+
+        this.SpinnerStart(false);
+      });
+  }
+
+  async modifyConfirmDate() {
+    newBookingData = bookingData;
+    newBookingData.Booking_From_Date = this.props.AllData.CheckIn;
+    newBookingData.Booking_To_Date = this.props.AllData.CheckOut;
+    newBookingData.Total_Guests = this.props.AllData.GuestCount;
+
+    const response = await axios
+      .post(
+        "https://vp3zckv2r8.execute-api.us-east-1.amazonaws.com/latest/booking/modify/cofirm",
+        {
+          existingBookingDetails: bookingData,
+          newBookingDetails: newBookingData,
+
+          userDetails: {
+            userId: userdetails.userID,
+            userName: userdetails.name,
+            userEmail: userdetails.email,
+            userContact: userdetails.phone_number
+          }
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + userdetails.idtoken,
+            Token: userdetails.accessToken
+          } //refreshToken, idtoken,accessToken
+        }
+      )
+      .then(response => {
+        // handle success
+
+        console.log(response);
+
+        this.SpinnerStart(false);
+      })
+      .catch(error => {
+        console.log(error.response);
+
+        this.SpinnerStart(false);
+      });
+  }
+
   GetFooterButton = () => {
     if (modifyBooking) {
       if (this.state.bookingmodifysave) {
@@ -98,6 +197,7 @@ class PreviewBookingDetails extends Component {
           <TouchableOpacity
             style={styles.footer}
             onPress={() => {
+              this.modifyDate();
               this.props.AllData.rootNavigation.navigate("CheckoutPage", {
                 Final_Total: Total
               });
@@ -206,9 +306,9 @@ class PreviewBookingDetails extends Component {
           My Stay Details
         </Text>
         <Text style={{ ...styles.subDetailText, color: "#808080" }}>
-          3 nights in {hotelDetails.Apartment_Name} - 1523
+          3 nights in {hotelDetails.Apartment_Name}
           {", \n"}
-          5th Floor , 6080 Water St Plano Texas 
+          {hotelDetails.Apartment_Full_Address}
         </Text>
       </View>
     );
@@ -279,6 +379,12 @@ class PreviewBookingDetails extends Component {
       </View>
     );
   };
+
+  renderSpinner() {
+    if (this.state.isLoading) {
+      return <Spinner />;
+    }
+  }
   renderhrfirsttag = () => {
     return <View style={styles.hrfirstline} />;
   };
@@ -432,6 +538,23 @@ class PreviewBookingDetails extends Component {
       </View>
     );
   };
+  setRefundAmount = value => {
+    this.setState({ RefundValue: value });
+  };
+  resetPage() {
+    const resetAction = StackActions.reset({
+      index: 0,
+      actions: [
+        NavigationActions.navigate(
+          {
+            routeName: "Home"
+          },
+          { pageIndex: "trips" }
+        )
+      ]
+    });
+    this.props.navigation.dispatch(resetAction);
+  }
   render() {
     hotelDetails = this.props.AllData.HotelData;
     checkin = this.props.AllData.CheckIn;
@@ -466,16 +589,29 @@ class PreviewBookingDetails extends Component {
         />
         <ManageBookingPopup
           setmanagebookModalVisible={this.setmanagebookModalVisible}
+          bookingData={bookingData}
           modalmanagebooking={this.state.modalmanagebooking}
           setcancelModalVisible={this.setcancelModalVisible}
           BookingmodifyClose={this.BookingmodifyClose}
         />
         <CancellationPopup
           setmanagebookModalVisible={this.setmanagebookModalVisible}
+          bookingData={bookingData}
           modalcancelbooking={this.state.modalcancelbooking}
           setcancelModalVisible={this.setcancelModalVisible}
+          SpinnerStart={this.SpinnerStart}
+          setRefundAmount={this.setRefundAmount}
+          setSuccesscancelModalVisible={this.setSuccesscancelModalVisible}
           BookingmodifyClose={this.BookingmodifyClose}
         />
+
+        <CancellSuccess
+          modalCancellSuccess={this.state.modalCancellSuccess}
+          bookingData={bookingData}
+          resetPage={this.resetPage}
+          RefundValue={this.state.RefundValue}
+        />
+        {this.renderSpinner()}
       </View>
     );
   }

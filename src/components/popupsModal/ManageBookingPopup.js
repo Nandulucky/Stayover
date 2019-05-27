@@ -24,12 +24,45 @@ import Icon from "react-native-vector-icons/EvilIcons";
 import { connect } from "react-redux";
 
 let hotelDetails;
-
+let dt1 = null;
+let dt2 = null;
 class ManageBookingPopup extends Component {
   state = {
     modalVisible: false,
     modalhomeinfo: false
   };
+
+  formatDate(date) {
+    if (date == "") {
+      return;
+    }
+    var newd = new Date(date);
+    var day = newd.getDay();
+    var monthIndex = newd.getMonth();
+    var weekday = new Array(7);
+    weekday[0] = "Sun";
+    weekday[1] = "Mon";
+    weekday[2] = "Tue";
+    weekday[3] = "Wed";
+    weekday[4] = "Thu";
+    weekday[5] = "Fri";
+    weekday[6] = "Sat";
+
+    var month = new Array();
+    month[0] = "Jan";
+    month[1] = "Feb";
+    month[2] = "Mar";
+    month[3] = "Apr";
+    month[4] = "May";
+    month[5] = "Jun";
+    month[6] = "Jul";
+    month[7] = "Aug";
+    month[8] = "Sep";
+    month[9] = "Oct";
+    month[10] = "Nov";
+    month[11] = "Dec";
+    return month[monthIndex] + " " + newd.getDate();
+  }
 
   setHomeModalVisible = visible => {
     this.setState({ modalhomeinfo: visible });
@@ -40,6 +73,8 @@ class ManageBookingPopup extends Component {
   constructor(props) {
     super(props);
     hotelDetails = this.props.AllData.HotelData;
+    dt1 = new Date(this.props.bookingData.Booking_From_Date);
+    dt2 = new Date(this.props.bookingData.Booking_To_Date);
   }
   onDateChange = () => {};
   render() {
@@ -108,7 +143,15 @@ class ManageBookingPopup extends Component {
                 textAlign: "center"
               }}
             >
-              for 3 nights Apr 10 - Apr-13
+              for{" "}
+              {Math.floor(
+                (Date.UTC(dt2.getFullYear(), dt2.getMonth(), dt2.getDate()) -
+                  Date.UTC(dt1.getFullYear(), dt1.getMonth(), dt1.getDate())) /
+                  (1000 * 60 * 60 * 24)
+              )}{" "}
+              nights {this.formatDate(this.props.bookingData.Booking_From_Date)}
+              {" - "}
+              {this.formatDate(this.props.bookingData.Booking_To_Date)}
             </Text>
             <Button
               title="Change Travel Dates"

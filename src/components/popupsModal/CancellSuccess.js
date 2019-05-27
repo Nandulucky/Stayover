@@ -29,16 +29,18 @@ const winHeight = Dimensions.get("window").height;
 const winWidth = Dimensions.get("window").width;
 let hotelDetails;
 
-class SuccessBookModel extends Component {
+class CancellSuccess extends Component {
   state = {
     modalVisible: false
   };
   constructor(props) {
     super(props);
+    dt1 = new Date(this.props.bookingData.Booking_From_Date);
+    dt2 = new Date(this.props.bookingData.Booking_To_Date);
     hotelDetails = this.props.AllData.HotelData;
   }
   setModalVisible(visible) {
-    this.props.modalstart = false;
+    this.props.modalCancellSuccess = false;
   }
 
   Aminity(dat) {}
@@ -59,7 +61,7 @@ class SuccessBookModel extends Component {
         <Modal
           animationType="fade"
           transparent={false}
-          visible={this.props.modalstart}
+          visible={this.props.modalCancellSuccess}
           // onRequestClose={() => {
           //   this.setModalVisible(!this.state.modalVisible);
           // }}
@@ -94,27 +96,26 @@ class SuccessBookModel extends Component {
               >
                 {hotelDetails.Apartment_Name}
               </Text>
-              <Text style={styles.textFooter}>
-                has been reserved for{" "}
+              <Text style={{ ...styles.textFooter, marginHorizontal: "5%" }}>
+                for{" "}
                 {Math.floor(
-                  (Date.UTC(
-                    this.props.checkOutDate.getFullYear(),
-                    this.props.checkOutDate.getMonth(),
-                    this.props.checkOutDate.getDate()
-                  ) -
+                  (Date.UTC(dt2.getFullYear(), dt2.getMonth(), dt2.getDate()) -
                     Date.UTC(
-                      this.props.checkInDate.getFullYear(),
-                      this.props.checkInDate.getMonth(),
-                      this.props.checkInDate.getDate()
+                      dt1.getFullYear(),
+                      dt1.getMonth(),
+                      dt1.getDate()
                     )) /
                     (1000 * 60 * 60 * 24)
                 )}{" "}
-                nights.
+                nights has been Cancelled. The Refund has been Initiated.
+              </Text>
+              <Text style={styles.textFooter}>
+                Total Refund amount = {this.props.RefundValue}
               </Text>
             </View>
             <Button
               color="#FFF200"
-              title="View Details"
+              title="Ok"
               onPress={this.ResetPage.bind(this)}
               buttonStyle={styles.button}
               titleStyle={{
@@ -139,10 +140,9 @@ var mapStateToProps = State => {
 export default connect(
   mapStateToProps,
   actions
-)(SuccessBookModel);
+)(CancellSuccess);
 
-SuccessBookModel.propTypes = {
-  makepayment: PropTypes.func,
+CancellSuccess.propTypes = {
   resetPage: PropTypes.func,
   spinnerstart: PropTypes.func
 };

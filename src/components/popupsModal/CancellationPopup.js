@@ -22,6 +22,12 @@ import Icon from "react-native-vector-icons/EvilIcons";
 import { connect } from "react-redux";
 import Homeinfo from "../popupsModal/Homeinfo";
 
+let userdetails = null;
+let hotelDetails = null;
+let refundData = null;
+let dt1 = null;
+let dt2 = null;
+
 class CancellationPopup extends Component {
   state = {
     modalVisible: false,
@@ -33,6 +39,188 @@ class CancellationPopup extends Component {
   setHomeModalVisible = visible => {
     this.setState({ modalhomeinfo: visible });
   };
+
+  constructor(props) {
+    super(props);
+    this.CancelBooking = this.CancelBooking.bind(this);
+    (userdetails = this.props.AllData.UserData),
+      (hotelDetails = this.props.AllData.HotelData);
+
+    dt1 = new Date(this.props.bookingData.Booking_From_Date);
+    dt2 = new Date(this.props.bookingData.Booking_To_Date);
+  }
+
+  formatDate(date) {
+    if (date == "") {
+      return;
+    }
+    var newd = new Date(date);
+    var day = newd.getDay();
+    var monthIndex = newd.getMonth();
+    var weekday = new Array(7);
+    weekday[0] = "Sun";
+    weekday[1] = "Mon";
+    weekday[2] = "Tue";
+    weekday[3] = "Wed";
+    weekday[4] = "Thu";
+    weekday[5] = "Fri";
+    weekday[6] = "Sat";
+
+    var month = new Array();
+    month[0] = "Jan";
+    month[1] = "Feb";
+    month[2] = "Mar";
+    month[3] = "Apr";
+    month[4] = "May";
+    month[5] = "Jun";
+    month[6] = "Jul";
+    month[7] = "Aug";
+    month[8] = "Sep";
+    month[9] = "Oct";
+    month[10] = "Nov";
+    month[11] = "Dec";
+    return month[monthIndex] + " " + newd.getDate();
+  }
+
+  async DoRefund() {
+    var charge = this.props.bookingData.Booking_Payment_Details.id;
+    if (refundData.data.refundAmount == "NIL") {
+      this.CancelBooking();
+      return;
+    }
+    var Amount = this.props.bookingData.Booking_Payment_Details.amount;
+    const response = await axios
+      .post(
+        "https://api.stripe.com/v1/refunds?charge=" +
+          charge +
+          "&amount=" +
+          Amount +
+          "&reason=requested_by_customer",
+
+        null,
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/x-www-form-urlencoded",
+            Authorization:
+              "Bearer " + "sk_test_ZwE0e6yVDfxqSyrFzdKYFSuD00qltN538t"
+          }
+        }
+      )
+      .then(response => {
+        // handle success
+        if (response.status == "200") {
+          this.CancelBooking();
+        }
+      })
+      .catch(error => {
+        console.log(error.response);
+
+        alert(
+          "Refund failed!",
+          error.response.data.error.message,
+          [{ text: "OK", onPress: () => console.log("OK Pressed") }],
+          { cancelable: false }
+        );
+
+        this.props.SpinnerStart(false);
+        return;
+      });
+  }
+  async componentWillMount() {
+    const res = await axios
+
+      .post(
+        `https://vp3zckv2r8.execute-api.us-east-1.amazonaws.com/latest/booking/cancel`,
+        {
+          userDetails: {
+            userId: userdetails.userID,
+            userName: userdetails.name,
+            userEmail: userdetails.email,
+            userContact: userdetails.phone_number
+          },
+
+          unitId: hotelDetails.Apartment_Unit_Id
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + userdetails.idtoken
+            // Token: userdetails.accessToken
+          } //refreshToken, idtoken,accessToken
+        }
+      )
+      .then(({ data }) => {
+        refundData = data;
+        if (data.data.refundAmount == "FULL") {
+          tis.setState({
+            amountTorefund: this.props.bookingData.Booking_Payment_Details
+              .amount
+          });
+          this.props.setRefundAmount(
+            this.props.bookingData.Booking_Payment_Details.amount
+          );
+        } else {
+          tis.setState({ amountTorefund: 0 });
+
+          this.props.setRefundAmount(0);
+        }
+      })
+      .catch(error => {
+        console.log(error.response);
+      });
+  }
+  async CancelBooking() {
+    this.props.SpinnerStart(true);
+    this.setModalVisible(false);
+
+    const res = await axios
+
+      .post(
+        `https://vp3zckv2r8.execute-api.us-east-1.amazonaws.com/latest/booking/cancel/confirm`,
+        {
+          userDetails: {
+            userId: userdetails.userID,
+            userName: userdetails.name,
+            userEmail: userdetails.email,
+            userContact: userdetails.phone_number
+          },
+
+          refundStatus: refundData.data.refundAmount,
+          cancelBookingInfo: {
+            bookingId: this.props.bookingData.Booking_Id,
+            bookingStatus: "CANCELLED",
+            checkInDate: this.props.bookingData.Booking_From_Date,
+            checkOutDate: this.props.bookingData.Booking_To_Date,
+            unitId: hotelDetails.Apartment_Unit_Id,
+            cencelPaymentDetails: null
+          }
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + userdetails.idtoken
+            // Token: userdetails.accessToken
+          } //refreshToken, idtoken,accessToken
+        }
+      )
+      .then(({ data }) => {
+        this.props.SpinnerStart(false);
+
+        if (data.statusCode) {
+          this.props.setSuccesscancelModalVisible(true);
+        } else {
+          alert(data.msg);
+        }
+      })
+      .catch(error => {
+        this.setModalVisible(false);
+
+        this.setState({ error: true });
+        this.props.SpinnerStart(false);
+        alert(error.response);
+      });
+  }
   onDateChange = () => {};
   render() {
     const { imageStyle, container } = styles;
@@ -121,14 +309,24 @@ class CancellationPopup extends Component {
                 textAlign: "center"
               }}
             >
-              3 nights Apr10 - Apr-13 will be cancelled.
+              {Math.floor(
+                (Date.UTC(dt2.getFullYear(), dt2.getMonth(), dt2.getDate()) -
+                  Date.UTC(dt1.getFullYear(), dt1.getMonth(), dt1.getDate())) /
+                  (1000 * 60 * 60 * 24)
+              )}{" "}
+              nights {this.formatDate(this.props.bookingData.Booking_From_Date)}
+              {" - "}
+              {this.formatDate(this.props.bookingData.Booking_To_Date)} will be
+              cancelled. The Refund amount is {this.state.amountTorefund}
             </Text>
           </View>
           <View style={{ marginTop: 20 }}>
             <Button
-              title="Cancel Booking"
+              title="Confirm Cancellation"
               color="#841584"
-              onPress={() => {}}
+              onPress={() => {
+                this.DoRefund();
+              }}
               buttonStyle={{ ...styles.bigbutton, backgroundColor: "#432355" }}
               titleStyle={{
                 color: "white",
@@ -167,7 +365,8 @@ class CancellationPopup extends Component {
 
 CancellationPopup.propTypes = {
   setcancelModalVisible: PropTypes.func,
-  BookingmodifyClose: PropTypes.func
+  SpinnerStart: PropTypes.func,
+  setRefundAmount: PropTypes.func
 };
 
 var mapStateToProps = State => {

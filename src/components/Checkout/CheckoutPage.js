@@ -30,6 +30,7 @@ let checkout = null;
 let userdetails = null;
 let guest;
 let Total;
+
 let paymentDetailsStripe;
 let bookingdatawithoutconfirm;
 class Checkout extends Component {
@@ -39,6 +40,7 @@ class Checkout extends Component {
     headColor: "#432355",
     modalstart: false,
     paymentMethod: null,
+    cardtoken: null,
     modifyBooking: false
   };
   renderSpinner() {
@@ -96,6 +98,55 @@ class Checkout extends Component {
   SpinnerStart(value) {
     this.setState({ isLoading: value });
   }
+
+  async MakePaymentCharged() {
+    const response = await axios
+      .post(
+        "https://api.stripe.com/v1/charges?amount=" +
+          Total +
+          "&currency=usd&source=" +
+          this.state.cardtoken +
+          "&description=" +
+          userdetails.name +
+          " booking for " +
+          hotelDetails.Apartment_Name,
+
+        null,
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/x-www-form-urlencoded",
+            Authorization:
+              "Bearer " + "sk_test_ZwE0e6yVDfxqSyrFzdKYFSuD00qltN538t"
+          }
+        }
+      )
+      .then(response => {
+        // handle success
+        if (response.status == "200") {
+          console.log(response);
+          paymentDetailsStripe = response.data;
+          this.confirmBooking(true);
+          return true;
+        }
+      })
+      .catch(error => {
+        console.log(error.response);
+        paymentDetailsStripe = error.response.data;
+        this.confirmBooking(false);
+
+        alert(
+          "Failed Payment, Check your details again?",
+          error.response.data.error.message,
+          [{ text: "OK", onPress: () => console.log("OK Pressed") }],
+          { cancelable: false }
+        );
+
+        this.SpinnerStart(false);
+        return;
+      });
+  }
+
   async MakePayment() {
     const response = await axios
       .post(
@@ -124,8 +175,9 @@ class Checkout extends Component {
         // handle success
         if (response.status == "200") {
           console.log(response);
-          paymentDetailsStripe = response.data;
-          this.confirmBooking(true);
+          this.setState({ cardtoken: response.data.id });
+
+          this.MakePaymentCharged();
 
           return true;
         }
@@ -142,12 +194,6 @@ class Checkout extends Component {
           { cancelable: false }
         );
 
-        alert(
-          "Error in Payment Processing",
-          error.response,
-          [{ text: "OK", onPress: () => console.log("OK Pressed") }],
-          { cancelable: false }
-        );
         this.SpinnerStart(false);
         return;
       });
@@ -531,6 +577,8 @@ class Checkout extends Component {
           resetPage={this.resetPage}
           modalstart={this.state.modalstart}
           modifyBooking={this.state.modifyBooking}
+          checkInDate={new Date(checkin)}
+          checkOutDate={new Date(checkout)}
         />
         {this.renderSpinner()}
       </View>

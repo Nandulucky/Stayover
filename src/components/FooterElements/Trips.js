@@ -81,7 +81,8 @@ class Trips extends React.Component {
             {
               modifyBooking: true,
               PreviewBookingTitle: "View details",
-              Final_Total: items.Booking_Total_Price
+              Final_Total: items.Booking_Total_Price,
+              bookingData: items
             }
           );
         }}
@@ -101,7 +102,8 @@ class Trips extends React.Component {
               {
                 modifyBooking: true,
                 PreviewBookingTitle: "View details",
-                Final_Total: items.Booking_Total_Price
+                Final_Total: items.Booking_Total_Price,
+                bookingData: items
               }
             );
           }}
@@ -122,7 +124,7 @@ class Trips extends React.Component {
           >
             {commonFunc.trunctuateWord(items.Apartment_Name, 28)}
           </Text>
-          {items.Apartment_Unit_Id == "cancelledbook" ? (
+          {items.Booking_Status == "CANCELLED" ? (
             <Text
               style={{
                 fontSize: 14,
@@ -269,7 +271,7 @@ class Trips extends React.Component {
     ];
   };
 
-  state = { isLoading: false, cards: [] };
+  state = { isLoading: false, cards: [], HistoryandCancelledCards: [] };
   componentDidMount() {
     if (this.props.CurrentPage != null) this.props.CurrentPage(null);
   }
@@ -302,8 +304,30 @@ class Trips extends React.Component {
       )
       .then(({ data }) => {
         console.log(data);
+        bookeddata = data.filter(
+          x => x.Booking_Status == "BOOKED_AND_BILLING_SUCCESS"
+        );
+        sorteddata = bookeddata.sort(
+          (a, b) =>
+            new Date(a.Booking_From_Date) - new Date(b.Booking_From_Date)
+        );
+
+        var currdate = new Date();
+        currdate.setMinutes(0);
+        currdate.setHours(14);
         this.setState({
-          cards: data
+          cards: sorteddata.filter(
+            x => new Date(x.Booking_From_Date).getTime() > currdate.getTime()
+          )
+        });
+
+        hist = data.filter(
+          x =>
+            new Date(x.Booking_From_Date).getTime() < currdate.getTime() ||
+            x.Booking_Status == "CANCELLED"
+        );
+        this.setState({
+          HistoryandCancelledCards: hist
         });
 
         this.setState({ isLoading: false });
@@ -352,7 +376,10 @@ class Trips extends React.Component {
       container,
       overlay
     } = styles;
-    if (this.state.cards.length == 0) {
+    if (
+      this.state.cards.length == 0 &&
+      this.state.HistoryandCancelledCards.length == 0
+    ) {
       return (
         <View style={{ flex: 1, alignContent: "space-between", top: "5%" }}>
           <Text
@@ -415,17 +442,105 @@ class Trips extends React.Component {
     } else {
       return (
         <ScrollView>
-          <Text
+          <View>
+            {this.state.cards.slice(0, 1).length != 0 ? (
+              <Text
+                style={{
+                  marginHorizontal: 12,
+                  marginTop: 10,
+                  fontSize: 16,
+                  fontFamily: "OpenSans-SemiBold",
+                  color: "#3d3d3d"
+                }}
+              >
+                Current Trip
+              </Text>
+            ) : (
+              <Text />
+            )}
+
+            {this.state.cards.slice(0, 1).map(items => (
+              <TouchableOpacity
+                onPress={() => {
+                  this.props.AddHotelData(items.Booking_Property_Details);
+                  this.props.AddCheckin(new Date(items.Booking_From_Date));
+                  this.props.AddCheckout(new Date(items.Booking_To_Date));
+                  this.props.AddGuestCount(
+                    items.Total_Guests == null ? 1 : items.Total_Guests
+                  );
+
+                  this.props.screenProps.rootNavigation.navigate(
+                    "PreviewBookingDetails",
+                    {
+                      modifyBooking: true,
+                      PreviewBookingTitle: "View details",
+                      Final_Total: items.Booking_Total_Price,
+                      bookingData: items
+                    }
+                  );
+                }}
+                style={card}
+                key={items.Booking_Id}
+              >
+                <Image
+                  source={{
+                    uri: items.Booking_Property_Details.Apartment_Image
+                  }}
+                  style={subcardImage}
+                />
+                <View style={{ flexDirection: "row", margin: 10 }}>
+                  <View style={styles.checkinedit}>
+                    <Text style={styles.datalabel}>Check-in</Text>
+                    <Text style={styles.showvalue}>
+                      {this.formatDate(items.Booking_From_Date)}
+                    </Text>
+                  </View>
+                  <View style={styles.checkoutedit}>
+                    <Text style={styles.datalabel}>Check-out</Text>
+                    <Text style={styles.showvalue}>
+                      {this.formatDate(items.Booking_To_Date)}
+                    </Text>
+                  </View>
+                  <View style={styles.checkguests}>
+                    <Text style={styles.datalabel}>Guests</Text>
+                    <Text style={styles.showvalue}>
+                      {items.Total_Guests} Guests
+                    </Text>
+                  </View>
+                </View>
+                <View style={FirstTag}>
+                  <Text style={subprice}>
+                    {commonFunc.trunctuateWord(items.Apartment_Name, 28)}
+                  </Text>
+                  <Text style={viewdetail}>View Details..</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View
             style={{
+              marginTop: 15,
               marginHorizontal: 12,
-              fontSize: 16,
-              fontFamily: "OpenSans-SemiBold",
-              color: "#3d3d3d"
+              borderTopWidth: 1,
+              borderTopColor: "#efefef"
             }}
-          >
-            Current Trip
-          </Text>
-          {this.state.cards.slice(0, 1).map(items => (
+          />
+          {this.state.cards.slice(1).length != 0 ? (
+            <Text
+              style={{
+                marginHorizontal: 12,
+                marginTop: 10,
+                fontSize: 16,
+                fontFamily: "OpenSans-SemiBold",
+                color: "#3d3d3d"
+              }}
+            >
+              Trips coming up
+            </Text>
+          ) : (
+            <Text />
+          )}
+          {this.state.cards.slice(1).map(items => (
             <TouchableOpacity
               onPress={() => {
                 this.props.AddHotelData(items.Booking_Property_Details);
@@ -440,7 +555,8 @@ class Trips extends React.Component {
                   {
                     modifyBooking: true,
                     PreviewBookingTitle: "View details",
-                    Final_Total: items.Booking_Total_Price
+                    Final_Total: items.Booking_Total_Price,
+                    bookingData: items
                   }
                 );
               }}
@@ -477,6 +593,7 @@ class Trips extends React.Component {
                 <Text style={subprice}>
                   {commonFunc.trunctuateWord(items.Apartment_Name, 28)}
                 </Text>
+
                 <Text style={viewdetail}>View Details..</Text>
               </View>
             </TouchableOpacity>
@@ -489,94 +606,22 @@ class Trips extends React.Component {
               borderTopColor: "#efefef"
             }}
           />
-          <Text
-            style={{
-              marginHorizontal: 12,
-              marginTop: 10,
-              fontSize: 16,
-              fontFamily: "OpenSans-SemiBold",
-              color: "#3d3d3d"
-            }}
-          >
-            Trips coming up
-          </Text>
-          {this.state.cards.slice(0, 3).map(items => (
-            <TouchableOpacity
-              onPress={() => {
-                this.props.AddHotelData(items.Booking_Property_Details);
-                this.props.AddCheckin(new Date(items.Booking_From_Date));
-                this.props.AddCheckout(new Date(items.Booking_To_Date));
-                this.props.AddGuestCount(
-                  items.Total_Guests == null ? 1 : items.Total_Guests
-                );
-
-                this.props.screenProps.rootNavigation.navigate(
-                  "PreviewBookingDetails",
-                  {
-                    modifyBooking: true,
-                    PreviewBookingTitle: "View details",
-                    Final_Total: items.Booking_Total_Price
-                  }
-                );
+          {this.state.HistoryandCancelledCards.length != 0 ? (
+            <Text
+              style={{
+                marginHorizontal: 12,
+                marginTop: 10,
+                fontSize: 16,
+                fontFamily: "OpenSans-SemiBold",
+                color: "#3d3d3d"
               }}
-              style={card}
-              key={items.Booking_Id}
             >
-              <Image
-                source={{
-                  uri: items.Booking_Property_Details.Apartment_Image
-                }}
-                style={subcardImage}
-              />
-              <View style={{ flexDirection: "row", margin: 10 }}>
-                <View style={styles.checkinedit}>
-                  <Text style={styles.datalabel}>Check-in</Text>
-                  <Text style={styles.showvalue}>
-                    {this.formatDate(items.Booking_From_Date)}
-                  </Text>
-                </View>
-                <View style={styles.checkoutedit}>
-                  <Text style={styles.datalabel}>Check-out</Text>
-                  <Text style={styles.showvalue}>
-                    {this.formatDate(items.Booking_To_Date)}
-                  </Text>
-                </View>
-                <View style={styles.checkguests}>
-                  <Text style={styles.datalabel}>Guests</Text>
-                  <Text style={styles.showvalue}>
-                    {items.Total_Guests} Guests
-                  </Text>
-                </View>
-              </View>
-              <View style={FirstTag}>
-                <Text style={subprice}>
-                  {commonFunc.trunctuateWord(items.Apartment_Name, 28)}
-                </Text>
-
-                <Text style={viewdetail}>View Details..</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-          <View
-            style={{
-              marginTop: 15,
-              marginHorizontal: 12,
-              borderTopWidth: 1,
-              borderTopColor: "#efefef"
-            }}
-          />
-          <Text
-            style={{
-              marginHorizontal: 12,
-              marginTop: 10,
-              fontSize: 16,
-              fontFamily: "OpenSans-SemiBold",
-              color: "#3d3d3d"
-            }}
-          >
-            History
-          </Text>
-          {this.state.cards.map(items => (
+              History and Cancelled Trips
+            </Text>
+          ) : (
+            <Text />
+          )}
+          {this.state.HistoryandCancelledCards.map(items => (
             <View style={{ ...card }} key={items.Booking_Id}>
               <Swipeable rightButtons={this.GetSlideData(items)}>
                 <View style={{ flexDirection: "row" }}>
@@ -587,7 +632,7 @@ class Trips extends React.Component {
                     style={cardhistoryImage}
                   />
 
-                  {items.Apartment_Unit_Id == "cancelledbook" ? (
+                  {items.Booking_Status == "CANCELLED" ? (
                     <View
                       style={{
                         ...overlay,
