@@ -153,7 +153,7 @@ class CancellationPopup extends Component {
       .then(({ data }) => {
         refundData = data;
         if (data.data.refundAmount == "FULL") {
-          tis.setState({
+          this.setState({
             amountTorefund: this.props.bookingData.Booking_Payment_Details
               .amount
           });
@@ -161,7 +161,7 @@ class CancellationPopup extends Component {
             this.props.bookingData.Booking_Payment_Details.amount
           );
         } else {
-          tis.setState({ amountTorefund: 0 });
+          this.setState({ amountTorefund: 0 });
 
           this.props.setRefundAmount(0);
         }

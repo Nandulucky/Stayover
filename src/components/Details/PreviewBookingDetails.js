@@ -83,6 +83,7 @@ class PreviewBookingDetails extends Component {
     userdetails = this.props.AllData.UserData;
     this.resetPage = this.resetPage.bind(this);
     this.modifyConfirmDate = this.modifyConfirmDate.bind(this);
+    this.checkBookingExists = this.checkBookingExists.bind(this);
     this.modifyDate = this.modifyDate.bind(this);
     guest = this.props.AllData.GuestCount;
     modifyBooking = this.props.navigation.getParam("modifyBooking", false);
@@ -136,8 +137,9 @@ class PreviewBookingDetails extends Component {
       )
       .then(response => {
         // handle success
-
-        console.log(response);
+        if (response.data.statusCode) {
+          this.modifyConfirmDate();
+        }
 
         this.SpinnerStart(false);
       })
@@ -156,7 +158,7 @@ class PreviewBookingDetails extends Component {
 
     const response = await axios
       .post(
-        "https://vp3zckv2r8.execute-api.us-east-1.amazonaws.com/latest/booking/modify/cofirm",
+        "https://vp3zckv2r8.execute-api.us-east-1.amazonaws.com/latest/booking/modify/confirm",
         {
           existingBookingDetails: bookingData,
           newBookingDetails: newBookingData,
@@ -186,6 +188,77 @@ class PreviewBookingDetails extends Component {
       .catch(error => {
         console.log(error.response);
 
+        this.SpinnerStart(false);
+      });
+  }
+
+  async checkBookingExists() {
+    const response = await axios
+      .post(
+        "https://vp3zckv2r8.execute-api.us-east-1.amazonaws.com/latest/booking/initiate",
+        {
+          //userId: userdetails.email,
+          unitId: hotelDetails.Apartment_Unit_Id,
+          apartmentName: hotelDetails.Apartment_Name,
+          type: hotelDetails.Apartment_Type,
+          apartmentAvailFromDate: hotelDetails.Apartment_Avail_From_Date,
+          apartmentAvailaToDate: hotelDetails.Apartment_Avail_To_Date,
+          checkInDate: new Date(checkin),
+          checkOutDate: new Date(checkout),
+          pricePerNight: hotelDetails.Apartment_Price_Per_Night,
+          guests: guest,
+          discountType: "weekly", //todo after
+          cleaningFee: 40,
+          stateTax: 6,
+          cityTax: 7,
+          serviceFee: 8,
+          fullAddress: hotelDetails.Apartment_Full_Address,
+          city: hotelDetails.City,
+          street: hotelDetails.Street,
+          state: hotelDetails.State,
+          pincode: hotelDetails.Pincode,
+          propertyDetails: hotelDetails,
+          //  stripe_payment_details: paymentDetailsStripe,
+          userDetails: {
+            userId: userdetails.userID,
+            userName: userdetails.name,
+            userEmail: userdetails.email,
+            userContact: userdetails.phone_number
+          },
+          totalPrice: Total
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + userdetails.idtoken,
+            Token: userdetails.accessToken
+          } //refreshToken, idtoken,accessToken
+        }
+      )
+      .then(response => {
+        if (response.data.statusCode == false) {
+          alert("Property already booked! Try with different date.");
+          this.SpinnerStart(false);
+
+          return;
+        } else {
+          this.props.AllData.rootNavigation.navigate("CheckoutPage", {
+            Final_Total: Total,
+            modifyBooking: modifyBooking,
+            bookingdatawithoutconfirm: response.data
+          });
+        }
+        // handle success
+        this.setState({
+          modifyBooking: this.props.navigation.getParam("modifyBooking", false)
+        });
+        bookingdatawithoutconfirm = response.data;
+        console.log(response);
+      })
+      .catch(error => {
+        console.log(error.response);
+        alert("Error in saving data! Try again.");
+        this.setState({ modalstart: false });
         this.SpinnerStart(false);
       });
   }
@@ -229,10 +302,7 @@ class PreviewBookingDetails extends Component {
             userdetails = this.props.AllData.UserData;
             guest = this.props.AllData.GuestCount;
             if (userdetails != null) {
-              this.props.AllData.rootNavigation.navigate("CheckoutPage", {
-                Final_Total: Total,
-                modifyBooking: modifyBooking
-              });
+              this.checkBookingExists();
             } else {
               this.props.AllData.rootNavigation.navigate("Login");
             }

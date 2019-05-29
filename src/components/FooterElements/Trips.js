@@ -271,7 +271,7 @@ class Trips extends React.Component {
     ];
   };
 
-  state = { isLoading: false, cards: [], HistoryandCancelledCards: [] };
+  state = { isLoading: false, cards: [], HistoryCards: [], CancelledCards: [] };
   componentDidMount() {
     if (this.props.CurrentPage != null) this.props.CurrentPage(null);
   }
@@ -305,7 +305,9 @@ class Trips extends React.Component {
       .then(({ data }) => {
         console.log(data);
         bookeddata = data.filter(
-          x => x.Booking_Status == "BOOKED_AND_BILLING_SUCCESS"
+          x =>
+            x.Booking_Status == "BOOKED_AND_BILLING_SUCCESS" ||
+            x.Booking_Status == "BOOKED_MODIFIED_BILLING_ADJUSTED"
         );
         sorteddata = bookeddata.sort(
           (a, b) =>
@@ -313,21 +315,24 @@ class Trips extends React.Component {
         );
 
         var currdate = new Date();
-        currdate.setMinutes(0);
-        currdate.setHours(14);
+        var yesterday = new Date(currdate.setDate(currdate.getDate() - 1));
+
         this.setState({
           cards: sorteddata.filter(
-            x => new Date(x.Booking_From_Date).getTime() > currdate.getTime()
+            x => new Date(x.Booking_From_Date).getTime() > yesterday.getTime()
           )
         });
 
+        canceltrip = data.filter(x => x.Booking_Status == "CANCELLED");
+        this.setState({
+          CancelledCards: canceltrip
+        });
+
         hist = data.filter(
-          x =>
-            new Date(x.Booking_From_Date).getTime() < currdate.getTime() ||
-            x.Booking_Status == "CANCELLED"
+          x => new Date(x.Booking_From_Date).getTime() < currdate.getTime()
         );
         this.setState({
-          HistoryandCancelledCards: hist
+          HistoryCards: hist
         });
 
         this.setState({ isLoading: false });
@@ -376,10 +381,7 @@ class Trips extends React.Component {
       container,
       overlay
     } = styles;
-    if (
-      this.state.cards.length == 0 &&
-      this.state.HistoryandCancelledCards.length == 0
-    ) {
+    if (this.state.cards.length == 0 && this.state.HistoryCards.length == 0) {
       return (
         <View style={{ flex: 1, alignContent: "space-between", top: "5%" }}>
           <Text
@@ -598,6 +600,7 @@ class Trips extends React.Component {
               </View>
             </TouchableOpacity>
           ))}
+
           <View
             style={{
               marginTop: 15,
@@ -606,7 +609,7 @@ class Trips extends React.Component {
               borderTopColor: "#efefef"
             }}
           />
-          {this.state.HistoryandCancelledCards.length != 0 ? (
+          {this.state.CancelledCards.length != 0 ? (
             <Text
               style={{
                 marginHorizontal: 12,
@@ -616,12 +619,71 @@ class Trips extends React.Component {
                 color: "#3d3d3d"
               }}
             >
-              History and Cancelled Trips
+              Cancelled Trips
             </Text>
           ) : (
             <Text />
           )}
-          {this.state.HistoryandCancelledCards.map(items => (
+          {this.state.CancelledCards.map(items => (
+            <View style={{ ...card }} key={items.Booking_Id}>
+              <Swipeable rightButtons={this.GetSlideData(items)}>
+                <View style={{ flexDirection: "row" }}>
+                  <Image
+                    source={{
+                      uri: items.Booking_Property_Details.Apartment_Image
+                    }}
+                    style={cardhistoryImage}
+                  />
+
+                  {items.Booking_Status == "CANCELLED" ? (
+                    <View
+                      style={{
+                        ...overlay,
+                        height: 60,
+                        alignItems: "center",
+                        justifyContent: "center"
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontFamily: "OpenSans-SemiBold",
+                          fontSize: 20,
+                          color: "red"
+                        }}
+                      >
+                        Cancelled
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              </Swipeable>
+            </View>
+          ))}
+
+          <View
+            style={{
+              marginTop: 15,
+              marginHorizontal: 12,
+              borderTopWidth: 1,
+              borderTopColor: "#efefef"
+            }}
+          />
+          {this.state.HistoryCards.length != 0 ? (
+            <Text
+              style={{
+                marginHorizontal: 12,
+                marginTop: 10,
+                fontSize: 16,
+                fontFamily: "OpenSans-SemiBold",
+                color: "#3d3d3d"
+              }}
+            >
+              History Trips
+            </Text>
+          ) : (
+            <Text />
+          )}
+          {this.state.HistoryCards.map(items => (
             <View style={{ ...card }} key={items.Booking_Id}>
               <Swipeable rightButtons={this.GetSlideData(items)}>
                 <View style={{ flexDirection: "row" }}>

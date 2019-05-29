@@ -64,6 +64,10 @@ class Checkout extends Component {
     this.resetPage = this.resetPage.bind(this);
     this.SpinnerStart = this.SpinnerStart.bind(this);
     Total = this.props.navigation.getParam("Final_Total", null);
+    bookingdatawithoutconfirm = this.props.navigation.getParam(
+      "bookingdatawithoutconfirm",
+      null
+    );
   }
 
   _onChange(form) {
@@ -311,77 +315,18 @@ class Checkout extends Component {
       return <View />;
     }
   };
-  async saveBookUser() {
-    const response = await axios
-      .post(
-        "https://vp3zckv2r8.execute-api.us-east-1.amazonaws.com/latest/booking/initiate",
-        {
-          //userId: userdetails.email,
-          unitId: hotelDetails.Apartment_Unit_Id,
-          apartmentName: hotelDetails.Apartment_Name,
-          type: hotelDetails.Apartment_Type,
-          apartmentAvailFromDate: hotelDetails.Apartment_Avail_From_Date,
-          apartmentAvailaToDate: hotelDetails.Apartment_Avail_To_Date,
-          checkInDate: new Date(checkin),
-          checkOutDate: new Date(checkout),
-          pricePerNight: hotelDetails.Apartment_Price_Per_Night,
-          guests: guest,
-          discountType: "weekly", //todo after
-          cleaningFee: 40,
-          stateTax: 6,
-          cityTax: 7,
-          serviceFee: 8,
-          fullAddress: hotelDetails.Apartment_Full_Address,
-          city: hotelDetails.City,
-          street: hotelDetails.Street,
-          state: hotelDetails.State,
-          pincode: hotelDetails.Pincode,
-          propertyDetails: hotelDetails,
-          //  stripe_payment_details: paymentDetailsStripe,
-          userDetails: {
-            userId: userdetails.userID,
-            userName: userdetails.name,
-            userEmail: userdetails.email,
-            userContact: userdetails.phone_number
-          },
-          totalPrice: Total
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + userdetails.idtoken,
-            Token: userdetails.accessToken
-          } //refreshToken, idtoken,accessToken
-        }
-      )
-      .then(response => {
-        if (response.data.statusCode == false) {
-          alert("Property already booked! Try with different date.");
-          this.SpinnerStart(false);
 
-          return;
-        }
-        // handle success
-        this.setState({
-          modifyBooking: this.props.navigation.getParam("modifyBooking", false)
-        });
-        bookingdatawithoutconfirm = response.data;
-        console.log(response);
-        this.MakePayment();
-      })
-      .catch(error => {
-        console.log(error.response);
-        alert("Error in saving data! Try again.");
-        this.setState({ modalstart: false });
-        this.SpinnerStart(false);
-      });
-  }
   async SaveBooking() {
     Auth.currentSession()
       .then(data => {
         (userdetails.accessToken = data.accessToken.jwtToken),
           (userdetails.idtoken = data.idToken.jwtToken);
-        this.saveBookUser();
+        // handle success
+        this.setState({
+          modifyBooking: this.props.navigation.getParam("modifyBooking", false)
+        });
+
+        this.MakePayment();
       })
       .catch(err => console.log(err));
   }
