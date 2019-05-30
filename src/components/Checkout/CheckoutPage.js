@@ -9,6 +9,7 @@ import { PaymentRequest } from "react-native-payments";
 import { connect } from "react-redux";
 import * as actions from "../../actions";
 //import stripe from "tipsi-stripe";
+import ModificationSuccess from "../popupsModal/ModificationSuccess";
 
 import ProductStyles from "../Details/ProductStyle";
 import {
@@ -30,6 +31,8 @@ let checkout = null;
 let userdetails = null;
 let guest;
 let Total;
+let bookingData = null;
+let modifyBooking = null;
 
 let paymentDetailsStripe;
 let bookingdatawithoutconfirm;
@@ -41,7 +44,8 @@ class Checkout extends Component {
     modalstart: false,
     paymentMethod: null,
     cardtoken: null,
-    modifyBooking: false
+    modifyBooking: false,
+    modalModificationSuccess: false
   };
   renderSpinner() {
     if (this.state.isLoading) {
@@ -55,6 +59,10 @@ class Checkout extends Component {
     this.confirmBooking = this.confirmBooking.bind(this);
 
     this.checkEnabledPayments = this.checkEnabledPayments.bind(this);
+    this.MakePaymentCharged = this.MakePaymentCharged.bind(this);
+
+    bookingData = this.props.navigation.getParam("bookingData", false);
+    modifyBooking = this.props.navigation.getParam("modifyBooking", false);
 
     hotelDetails = this.props.AllData.HotelData;
     checkin = this.props.AllData.CheckIn;
@@ -62,12 +70,10 @@ class Checkout extends Component {
     userdetails = this.props.AllData.UserData;
     guest = this.props.AllData.GuestCount;
     this.resetPage = this.resetPage.bind(this);
+
+    this.modifyConfirmDate = this.modifyConfirmDate.bind(this);
     this.SpinnerStart = this.SpinnerStart.bind(this);
     Total = this.props.navigation.getParam("Final_Total", null);
-    bookingdatawithoutconfirm = this.props.navigation.getParam(
-      "bookingdatawithoutconfirm",
-      null
-    );
   }
 
   _onChange(form) {
@@ -103,6 +109,52 @@ class Checkout extends Component {
     this.setState({ isLoading: value });
   }
 
+  async modifyConfirmDate() {
+    let newBookingData = Object.create(bookingData);
+
+    newBookingData.Booking_From_Date = this.props.AllData.CheckIn;
+    newBookingData.Booking_To_Date = this.props.AllData.CheckOut;
+    newBookingData.Total_Guests = this.props.AllData.GuestCount;
+    if (paymentDetailsStripe != null) {
+      newBookingData.Booking_Payment_Details = paymentDetailsStripe;
+    }
+    const response = await axios
+      .post(
+        "https://vp3zckv2r8.execute-api.us-east-1.amazonaws.com/latest/booking/modify/confirm",
+        {
+          existingBookingDetails: bookingData,
+          newBookingDetails: newBookingData,
+
+          userDetails: {
+            userId: userdetails.userID,
+            userName: userdetails.name,
+            userEmail: userdetails.email,
+            userContact: userdetails.phone_number
+          }
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + userdetails.idtoken,
+            Token: userdetails.accessToken
+          } //refreshToken, idtoken,accessToken
+        }
+      )
+      .then(response => {
+        // handle success
+
+        console.log(response);
+
+        this.setSuccessModificationSuccess(true);
+        this.SpinnerStart(false);
+      })
+      .catch(error => {
+        console.log(error.response);
+
+        this.SpinnerStart(false);
+      });
+  }
+
   async MakePaymentCharged() {
     const response = await axios
       .post(
@@ -130,15 +182,22 @@ class Checkout extends Component {
         if (response.status == "200") {
           console.log(response);
           paymentDetailsStripe = response.data;
-          this.confirmBooking(true);
+          if (modifyBooking) {
+            this.modifyConfirmDate();
+          } else {
+            this.confirmBooking(true);
+          }
           return true;
         }
       })
       .catch(error => {
         console.log(error.response);
         paymentDetailsStripe = error.response.data;
-        this.confirmBooking(false);
-
+        if (modifyBooking) {
+          this.modifyConfirmDate();
+        } else {
+          this.confirmBooking(false);
+        }
         alert(
           "Failed Payment, Check your details again?",
           error.response.data.error.message,
@@ -152,6 +211,9 @@ class Checkout extends Component {
   }
 
   async MakePayment() {
+    if (modifyBooking) {
+      Total = this.props.navigation.getParam("extraPayment", false);
+    }
     const response = await axios
       .post(
         "https://api.stripe.com/v1/tokens?card[number]=" +
@@ -180,7 +242,6 @@ class Checkout extends Component {
         if (response.status == "200") {
           console.log(response);
           this.setState({ cardtoken: response.data.id });
-
           this.MakePaymentCharged();
 
           return true;
@@ -189,7 +250,9 @@ class Checkout extends Component {
       .catch(error => {
         console.log(error.response);
         paymentDetailsStripe = error.response.data;
-        this.confirmBooking(false);
+        if (!modifyBooking) {
+          this.confirmBooking(false);
+        }
 
         alert(
           "Failed Payment",
@@ -521,9 +584,14 @@ class Checkout extends Component {
         <SuccesBookModal
           resetPage={this.resetPage}
           modalstart={this.state.modalstart}
-          modifyBooking={this.state.modifyBooking}
+          modifyBooking={modifyBooking}
           checkInDate={new Date(checkin)}
           checkOutDate={new Date(checkout)}
+        />
+        <ModificationSuccess
+          modalModificationSuccess={this.state.modalModificationSuccess}
+          bookingData={bookingData}
+          resetPage={this.resetPage}
         />
         {this.renderSpinner()}
       </View>
