@@ -109,12 +109,20 @@ class Checkout extends Component {
     this.setState({ isLoading: value });
   }
 
+  setSuccessModificationSuccess = visible => {
+    this.setState({ modalModificationSuccess: visible });
+  };
+
   async modifyConfirmDate() {
     let newBookingData = Object.create(bookingData);
 
     newBookingData.Booking_From_Date = this.props.AllData.CheckIn;
     newBookingData.Booking_To_Date = this.props.AllData.CheckOut;
     newBookingData.Total_Guests = this.props.AllData.GuestCount;
+
+    newBookingData.Apartment_Unit_Id = hotelDetails.Apartment_Unit_Id;
+    newBookingData.Booking_Total_Price = Total;
+
     if (paymentDetailsStripe != null) {
       newBookingData.Booking_Payment_Details = paymentDetailsStripe;
     }
@@ -143,9 +151,12 @@ class Checkout extends Component {
       .then(response => {
         // handle success
 
-        console.log(response);
-
-        this.setSuccessModificationSuccess(true);
+        if (response.data.statusCode) {
+          console.log(response);
+          this.setSuccessModificationSuccess(true);
+        } else {
+          alert(response.data.msg);
+        }
         this.SpinnerStart(false);
       })
       .catch(error => {

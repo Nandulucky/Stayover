@@ -21,6 +21,7 @@ import CancellationPopup from "../popupsModal/CancellationPopup";
 import CancellSuccess from "../popupsModal/CancellSuccess";
 import { Spinner } from "../common";
 import { Button } from "react-native-paper";
+import ModificationSuccess from "../popupsModal/ModificationSuccess";
 
 const styles = StyleSheet.create({ ...ProductStyles });
 var month = new Array();
@@ -58,6 +59,7 @@ let userdetails = null;
 let modifyBooking = false;
 let bookingData = null;
 
+let refundPaymentDetails = null;
 class PreviewBookingDetails extends Component {
   static defaultProps = {
     containerStyle: {}
@@ -69,11 +71,16 @@ class PreviewBookingDetails extends Component {
     modalcancelbooking: false,
     bookingmodifysave: false,
     isLoading: false,
-    modalCancellSuccess: false
+    modalCancellSuccess: false,
+    modalModificationSuccess: false
   };
 
   SpinnerStart = value => {
     this.setState({ isLoading: value });
+  };
+
+  setSuccessModificationSuccess = visible => {
+    this.setState({ modalModificationSuccess: visible });
   };
   constructor(props) {
     super(props);
@@ -111,6 +118,7 @@ class PreviewBookingDetails extends Component {
   };
 
   async modifyDate() {
+    this.SpinnerStart(true);
     const response = await axios
       .post(
         "https://vp3zckv2r8.execute-api.us-east-1.amazonaws.com/latest/booking/modify",
@@ -151,10 +159,18 @@ class PreviewBookingDetails extends Component {
   }
 
   async modifyConfirmDate() {
-    newBookingData = bookingData;
+    let newBookingData = Object.assign({}, bookingData);
     newBookingData.Booking_From_Date = this.props.AllData.CheckIn;
     newBookingData.Booking_To_Date = this.props.AllData.CheckOut;
     newBookingData.Total_Guests = this.props.AllData.GuestCount;
+    newBookingData.Apartment_Unit_Id = hotelDetails.Apartment_Unit_Id;
+    newBookingData.Booking_Total_Price = TotalRefundAmount;
+    newBookingData.Booking_Property_Details =
+      bookingData.Booking_Property_Details;
+
+    if (refundPaymentDetails != null) {
+      newBookingData.Booking_Payment_Details = refundPaymentDetails;
+    }
 
     const response = await axios
       .post(
@@ -183,6 +199,7 @@ class PreviewBookingDetails extends Component {
 
         console.log(response);
 
+        this.setSuccessModificationSuccess(true);
         this.SpinnerStart(false);
       })
       .catch(error => {
@@ -243,7 +260,7 @@ class PreviewBookingDetails extends Component {
           return;
         } else {
           this.props.AllData.rootNavigation.navigate("CheckoutPage", {
-            Final_Total: Total,
+            Final_Total: TotalextraPayment,
             modifyBooking: modifyBooking,
             bookingdatawithoutconfirm: response.data
           });
@@ -263,6 +280,54 @@ class PreviewBookingDetails extends Component {
       });
   }
 
+  async DoRefund() {
+    var charge = null;
+    if (bookingData.Booking_Payment_Details.object == "refund") {
+      charge = bookingData.Booking_Payment_Details.charge;
+    } else if (bookingData.Booking_Payment_Details.object == "charge") {
+      charge = bookingData.Booking_Payment_Details.id;
+    }
+
+    const response = await axios
+      .post(
+        "https://api.stripe.com/v1/refunds?charge=" +
+          charge +
+          "&amount=" +
+          TotalRefundAmount +
+          "&reason=requested_by_customer",
+        null,
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/x-www-form-urlencoded",
+            Authorization:
+              "Bearer " + "sk_test_ZwE0e6yVDfxqSyrFzdKYFSuD00qltN538t"
+          }
+        }
+      )
+      .then(response => {
+        // handle success
+        if (response.status == "200") {
+          refundPaymentDetails = response.data;
+          this.modifyConfirmDate();
+        }
+        this.SpinnerStart(false);
+      })
+      .catch(error => {
+        console.log(error.response);
+
+        alert(
+          "Refund failed!",
+          error.response.data.error.message,
+          [{ text: "OK", onPress: () => console.log("OK Pressed") }],
+          { cancelable: false }
+        );
+
+        this.SpinnerStart(false);
+        return;
+      });
+  }
+
   GetFooterButton = () => {
     if (modifyBooking) {
       if (this.state.bookingmodifysave) {
@@ -271,9 +336,6 @@ class PreviewBookingDetails extends Component {
             style={styles.footer}
             onPress={() => {
               this.modifyDate();
-              this.props.AllData.rootNavigation.navigate("CheckoutPage", {
-                Final_Total: Total
-              });
             }}
           >
             <Text style={styles.textFooter}>Modify Dates and Book</Text>
@@ -579,7 +641,13 @@ class PreviewBookingDetails extends Component {
             }
           </Text>
           <Text style={styles.invoicepernight}>
-            ${(Servicefee = (perNightTotalfee * parseFloat(8)) / 100)}
+            $
+            {
+              (Servicefee =
+                (perNightTotalfee *
+                  parseFloat(hotelDetails.Apartment_Service_Fee)) /
+                100)
+            }
           </Text>
         </View>
       </View>
@@ -680,6 +748,12 @@ class PreviewBookingDetails extends Component {
           bookingData={bookingData}
           resetPage={this.resetPage}
           RefundValue={this.state.RefundValue}
+        />
+
+        <ModificationSuccess
+          modalModificationSuccess={this.state.modalModificationSuccess}
+          bookingData={bookingData}
+          resetPage={this.resetPage}
         />
         {this.renderSpinner()}
       </View>
