@@ -11,7 +11,7 @@
     "accordion-collapse-react-native": "^0.1.9",
     "aws-amplify": "^1.1.24",
     "aws-amplify-react-native": "^2.1.9",
-    "axios": "^0.18.0",
+    "axios": "^0.21.1",
     "moment": "^2.24.0",
     "prop-types": "^15.7.2",
     "react": "16.6.3",
